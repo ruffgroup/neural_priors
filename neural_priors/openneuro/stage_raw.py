@@ -93,14 +93,17 @@ def build_events(subject, session, run):
     for t in trials:
         trial_nr = (run - 1) * 30 + int(t)
         response = fb.loc[t, 'response'] if t in fb.index else np.nan
-        rt = fb.loc[t, 'response_time'] if t in fb.index else np.nan
+        # The click ends the response screen and starts the feedback screen, so
+        # RT = feedback onset - response-screen onset. (The logged
+        # 'response_time' column is relative to the last logged event, often a
+        # scanner pulse, and is not used.)
+        resp_end = fb.loc[t, 'onset'] if t in fb.index else np.nan
+        rt = resp_end - resp.loc[t, 'onset'] if np.isfinite(response) else np.nan
         common = dict(trial_nr=trial_nr, range=rng, n=int(stim.loc[t, 'n']), response=response,
                       response_time=rt, start_marker_position=stim.loc[t, 'start_marker_position'])
         rows.append(dict(onset=stim.loc[t, 'onset'], duration=stim.loc[t, 'duration'],
                          trial_type='stimulus', **common))
-        # Response screen lasts until the response is given (or times out),
-        # i.e. until the feedback screen appears.
-        resp_end = fb.loc[t, 'onset'] if t in fb.index else np.nan
+        # Response screen lasts until the click (or the 3-s time-out).
         rows.append(dict(onset=resp.loc[t, 'onset'], duration=resp_end - resp.loc[t, 'onset'],
                          trial_type='response', **common))
 
