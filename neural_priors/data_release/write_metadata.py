@@ -26,7 +26,7 @@ CODE = 'https://github.com/ruffgroup/neural_priors'
 TASK_DESCRIPTION = (
     'On each trial participants saw a cloud of dots (0.6 s), and after a jittered delay (4-6 s) '
     'reported its numerosity by moving a marker along a response slider and clicking '
-    '(maximum 3 s). The chosen number was then shown for 0.5 s. Each session consisted of '
+    '(maximum 3 s). The slider with the chosen value then stayed on screen for 0.5 s (or "Too late!" was shown). Each session consisted of '
     'two blocks of 4 runs of 30 trials; in one block numerosities were drawn uniformly from the '
     'narrow range (10-25), in the other from the wide range (10-40). Before each block, participants '
     'saw 15 labelled examples and completed 30 practice trials with feedback (no fMRI data were '
