@@ -88,7 +88,9 @@ def copy_nifti_clean_header(src, dst, data_transform=None):
 
     makedirs_for(dst)
     tmp = dst + '.part'
-    with gzip.open(tmp, 'wb', compresslevel=6) as f:
+    # No file name and mtime=0 in the gzip header (bids-validator privacy checks).
+    with open(tmp, 'wb') as raw_out, gzip.GzipFile(filename='', mode='wb', fileobj=raw_out,
+                                                   compresslevel=6, mtime=0) as f:
         f.write(head)
         f.write(body)
     os.replace(tmp, dst)

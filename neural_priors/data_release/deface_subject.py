@@ -125,7 +125,8 @@ def deface_from_fmriprep(src, dst, mask_dst, subject, preproc_fn, removed_t1w):
         rs[label] = (np.corrcoef(res[head], rawdata[head])[0, 1], t)
     label = max(rs, key=lambda k: rs[k][0])
     r, t = rs[label]
-    assert r > 0.5, f'{name}: fMRIPrep T1w does not match raw T1w after transform (r={r:.2f})'
+    if r <= 0.5:
+        return None   # caller falls back to a sibling image on the same grid
 
     mask_img = nib.Nifti1Image(removed_t1w.astype(np.float32), pre.affine)
     removed = resample(t, mask_img, raw, order=1, cval=1.0) > 0.01
@@ -150,11 +151,34 @@ def main(subject):
 
     raws = sorted(glob.glob(op.join(WORK, 'undefaced', 'raw', f'sub-{subject}', 'ses-*', 'anat', '*_T1w.nii.gz')))
     assert len(raws) >= 4, raws
+    failed = []
     for src in raws:
         dst = op.join(TARGET, op.relpath(src, op.join(WORK, 'undefaced', 'raw')))
         mask_dst = op.join(WORK, 'deface_masks', 'raw', op.basename(src).replace('.nii.gz', '_removed.nii.gz'))
         stats = deface_from_fmriprep(src, dst, mask_dst, subject, preproc_src, removed_t1w)
+        if stats is None:
+            failed.append((src, dst, mask_dst))
+            continue
         rows.append(dict(subject=subject, kind='raw', file=op.relpath(dst, TARGET), **stats))
+        print(rows[-1], flush=True)
+
+    # Images that do not look like the fMRIPrep T1w (e.g. sub-19's third ses-2
+    # reconstruction, which is mostly noise) get the mask of a successfully
+    # handled image of the same session on the identical voxel grid.
+    for src, dst, mask_dst in failed:
+        img = nib.load(src)
+        ses_dir = op.dirname(src)
+        sibling = next((r for r in rows if r['kind'] == 'raw'
+                        and op.dirname(op.join(WORK, 'undefaced', 'raw', r['file'])) == ses_dir
+                        and nib.load(op.join(WORK, 'undefaced', 'raw', r['file'])).shape == img.shape
+                        and np.allclose(nib.load(op.join(WORK, 'undefaced', 'raw', r['file'])).affine, img.affine)),
+                       None)
+        assert sibling is not None, f'{src}: transform check failed and no sibling on the same grid'
+        sib_mask = op.join(WORK, 'deface_masks', 'raw', op.basename(sibling['file']).replace('.nii.gz', '_removed.nii.gz'))
+        removed = np.asanyarray(nib.load(sib_mask).dataobj) > 0
+        apply_and_save(src, dst, removed, mask_dst, img.affine)
+        rows.append(dict(subject=subject, kind='raw', file=op.relpath(dst, TARGET),
+                         method=f'sibling-mask ({op.basename(sibling["file"])})', **head_stats(img, removed)))
         print(rows[-1], flush=True)
 
     out = op.join(WORK, 'qc', f'sub-{subject}_deface.tsv')

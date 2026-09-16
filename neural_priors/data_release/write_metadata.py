@@ -81,11 +81,11 @@ def write_raw():
               op.join(TARGET, 'T1w.json'))
 
     json_dump({
-        'onset': {'Description': 'Onset (s) relative to the first recorded volume of the run.'},
-        'duration': {'Description': 'Duration (s) of the stimulus display (stimulus rows) or of the '
-                                    'response screen, i.e. until the click or the 3-s time-out '
-                                    '(response rows).'},
-        'trial_type': {'Levels': {'stimulus': 'Dot-cloud presentation.',
+        'trial_type': {'Description': 'Event type. Onsets are relative to the first recorded volume '
+                                      'of the run; duration is the dot-cloud display (stimulus) or the '
+                                      'time the response slider was on screen, i.e. until the click or '
+                                      'the 3-s time-out (response).',
+                       'Levels': {'stimulus': 'Dot-cloud presentation.',
                                   'response': 'Response slider on screen.'}},
         'trial_nr': {'Description': 'Trial number within the session (1-240); run r holds trials '
                                     '30*(r-1)+1 ... 30*r.'},

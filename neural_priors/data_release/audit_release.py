@@ -43,7 +43,7 @@ ALLOWED = [
     rf'derivatives/fmriprep/sourcedata/freesurfer/{SUBJ}/mri/[A-Za-z0-9.+_-]+\.mgz',
     rf'derivatives/fmriprep/sourcedata/freesurfer/{SUBJ}/mri/transforms/talairach\.(xfm|lta)',
     rf'derivatives/fmriprep/sourcedata/freesurfer/{SUBJ}/label/[A-Za-z0-9.+_-]+\.(label|annot|ctab)',
-    rf'derivatives/fmriprep/sourcedata/freesurfer/{SUBJ}/surf/[lr]h\.[A-Za-z.]+',
+    rf'derivatives/fmriprep/sourcedata/freesurfer/{SUBJ}/surf/[lr]h\.[A-Za-z._]+',
 ]
 TEXT_EXT = ('.json', '.tsv', '.md', '.bib', '.label', '.ctab', '.xfm', '.lta', '.txt', 'README', 'CHANGES')
 
@@ -112,6 +112,7 @@ def main():
     json_keys = collections.Counter()
     sizes = collections.defaultdict(lambda: [0, 0])
     highres = []
+    nifti_extensions = {}
     for rel in files:
         fn = op.join(TARGET, rel)
         ext = re.sub(r'^.*?((\.[a-z]+)+|README|CHANGES)$', r'\1', op.basename(rel))
@@ -137,7 +138,11 @@ def main():
             hdr, b = nifti_header_bytes(fn)
             scan_text(rel, '\n'.join(binary_strings(b)), hits)
             if len(b) > 352 and b[348:352] != b'\x00\x00\x00\x00':
-                problems.append(f'NIfTI header extension present: {rel}')
+                # Extension strings are scanned above like any other header text;
+                # raw data must not carry any.
+                if not rel.startswith('derivatives/'):
+                    problems.append(f'NIfTI header extension present: {rel}')
+                nifti_extensions[rel] = ' | '.join(binary_strings(b[352:], 5))[:300]
             if not rel.startswith('derivatives/'):
                 for field in NIFTI_TEXT_FIELDS:
                     if hdr[field].tobytes().strip(b'\x00'):
@@ -165,8 +170,9 @@ def main():
     # 4. high-resolution images must be QC-approved
     qc_deface = pd.concat([pd.read_csv(f, sep='\t') for f in glob.glob(op.join(WORK, 'qc', 'sub-*_qc_deface.tsv'))])
     qc_other = pd.concat([pd.read_csv(f, sep='\t') for f in glob.glob(op.join(WORK, 'qc', 'sub-*_qc_other_volumes.tsv'))])
+    sibling = qc_deface.get('method', pd.Series('', index=qc_deface.index)).fillna('').str.startswith('sibling-mask')
     approved_defaced = set(qc_deface.loc[(qc_deface['brain_voxels_removed'] == 0) &
-                                         (qc_deface['frac_head_voxels_removed'] > 0.01), 'file'])
+                                         ((qc_deface['frac_head_voxels_removed'] > 0.01) | sibling), 'file'])
     approved_other = set(qc_other.loc[qc_other['n_outside_dilated_brainmask'] <= 100, 'file'])
     for rel in highres:
         if rel not in approved_defaced and rel not in approved_other:
@@ -196,6 +202,8 @@ def main():
             f.write('None\n\n')
         f.write('## Expected hits (author names in dataset-level docs)\n\n')
         f.write(hits[hits['expected']].groupby(['file', 'match']).size().to_string() + '\n\n')
+        f.write('## NIfTI header extensions (derivatives)\n\n' + '\n'.join(
+            f'- {k}: `{v}`' for k, v in sorted(nifti_extensions.items())) + '\n\n')
         f.write('## JSON keys\n\n' + '\n'.join(f'- {k}: {v}' for k, v in sorted(json_keys.items())) + '\n\n')
         f.write('## Files per type\n\n' + '\n'.join(f'- {k}: {v[0]} files, {v[1] / 1e9:.2f} GB'
                                                    for k, v in sorted(sizes.items())) + '\n')
