@@ -24,7 +24,7 @@ export PYTHONUNBUFFERED=1
 TARGET=/shares/zne.uzh/gdehol/ds-neuralpriors-openneuro
 
 if [[ "$STEP" == validate ]]; then
-    export DENO_DIR="/scratch//deno"
+    export DENO_DIR="/scratch/$USER/deno"
     mkdir -p /shares/zne.uzh/gdehol/ds-neuralpriors-openneuro-work/audit
     "$HOME/bin/deno" run -ERWN jsr:@bids/validator "$TARGET" -v \
         > /shares/zne.uzh/gdehol/ds-neuralpriors-openneuro-work/audit/bids_validator.txt 2>&1 || true
