@@ -93,6 +93,7 @@ def deface_template_registration(src, dst, mask_dst):
         mask = nib.load(warped)
         assert mask.shape == img.shape and np.allclose(mask.affine, img.affine, atol=1e-3)
         removed = np.asanyarray(mask.dataobj) < MASK_THRESHOLD
+        makedirs_for(mask_dst)
         shutil.move(mat, mask_dst.replace('_removed.nii.gz', '_flirt.mat'))
     apply_and_save(src, dst, removed, mask_dst, img.affine)
     return removed, dict(method='pydeface-template', **head_stats(img, removed))
