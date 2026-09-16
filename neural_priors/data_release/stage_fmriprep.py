@@ -81,7 +81,10 @@ def rewrite_json(src, dst):
 def stage_fmriprep(subject):
     src_sub = op.join(FMRIPREP, f'sub-{subject}')
     n = 0
-    for src in sorted(glob.glob(op.join(src_sub, 'anat', '*'))):
+    anat_files = sorted(glob.glob(op.join(src_sub, 'anat', '*')))
+    # An empty listing means the share is not (properly) visible on this node.
+    assert anat_files, f'no fMRIPrep anat files visible in {src_sub}'
+    for src in anat_files:
         name = op.basename(src)
         if re.fullmatch(ANAT_UNDEFACED, name):
             dst = op.join(WORK, 'undefaced', 'fmriprep', f'sub-{subject}', 'anat', name)
