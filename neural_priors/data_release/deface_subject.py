@@ -18,6 +18,7 @@ WORK/deface_masks (for QC), and one summary TSV per subject in WORK/qc.
 import argparse
 import glob
 import os
+import shutil
 import os.path as op
 import subprocess
 import tempfile
@@ -67,7 +68,7 @@ def deface(src, dst, mask_dst):
         makedirs_for(mask_dst)
         out = nib.Nifti1Image(removed.astype(np.uint8), img.affine)
         out.to_filename(mask_dst)
-        os.replace(mat, mask_dst.replace('_removed.nii.gz', '_flirt.mat'))
+        shutil.move(mat, mask_dst.replace('_removed.nii.gz', '_flirt.mat'))
 
     data = np.asanyarray(img.dataobj)
     head = data > np.percentile(data[data > 0], 20)
