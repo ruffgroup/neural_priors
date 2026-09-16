@@ -18,14 +18,13 @@ Usage: python stage_fmriprep.py 01
 import argparse
 import glob
 import json
-import os
 import os.path as op
 import re
 
 import nibabel as nib
 import numpy as np
 
-from neural_priors.openneuro.release import (SOURCE, TARGET, WORK, TASK, TASK_OLD,
+from neural_priors.openneuro.release import (SOURCE, TARGET, WORK, TASK, TASK_NAME, TASK_OLD,
                                              copy_file, get_subjects, makedirs_for, rename_task)
 
 FMRIPREP = op.join(SOURCE, 'derivatives', 'fmriprep')
