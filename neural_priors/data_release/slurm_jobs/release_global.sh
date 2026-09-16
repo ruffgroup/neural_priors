@@ -10,7 +10,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=03:00:00
-#SBATCH --output=/home/gdehol/logs/np_release_global_%j.txt
+#SBATCH --output=/shares/zne.uzh/gdehol/ds-neuralpriors-openneuro-work/logs/np_release_global_%j.txt
 
 set -eo pipefail
 STEP=${1:?step name required}

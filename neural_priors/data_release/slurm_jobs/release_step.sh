@@ -4,7 +4,7 @@
 #   steps: stage_raw | stage_fmriprep | deface_subject | qc_subject
 #SBATCH --job-name=np_release
 #SBATCH --account=zne.uzh
-#SBATCH --partition=standard
+#SBATCH --partition=lowprio
 #SBATCH --exclude=u24-cva0000-303  # /shares not visible there (2026-09-16): empty listings, EACCES
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=16G
@@ -19,8 +19,9 @@ export TMPDIR="/scratch/$USER/tmp/${SLURM_JOB_ID:-manual}_${SLURM_ARRAY_TASK_ID:
 mkdir -p "$TMPDIR"
 sleep $(( RANDOM % 20 ))
 
-LOGFILE="$HOME/logs/np_release_${STEP}_sub-${SUBJECT}_${SLURM_ARRAY_JOB_ID:-$SLURM_JOB_ID}.txt"
-exec >"$LOGFILE" 2>&1
+LOGFILE="/shares/zne.uzh/gdehol/ds-neuralpriors-openneuro-work/logs/np_release_${STEP}_sub-${SUBJECT}_${SLURM_ARRAY_JOB_ID:-$SLURM_JOB_ID}.txt"
+mkdir -p "$(dirname "")"
+exec >"" 2>&1
 scontrol update jobid="${SLURM_JOB_ID}" name="np_${STEP}" 2>/dev/null || true
 echo "Host: $(hostname)  sub-${SUBJECT}  step ${STEP}  started $(date)"
 
