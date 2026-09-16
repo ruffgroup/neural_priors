@@ -178,14 +178,14 @@ def plot_empirical_panel(ax, fig, df):
     cb.ax.yaxis.label.set_size(6.5)
     cb.outline.set_visible(False)
 
-    ax.set_title(f'Empirical data, below-range voxels\n(free per-voxel shift, n={len(df):,})', fontsize=8.5)
+    ax.set_title(f'Empirical data, below-range voxels\n(model 3, free per-voxel shift, n={len(df):,})', fontsize=8.5)
     ax.set_xlim(0, MU_LIM)
     ax.set_ylim(0, MU_LIM)
     ax.set_xticks([0, 2.5, 5, 7.5, 10])
     ax.set_yticks([0, 2.5, 5, 7.5, 10])
     ax.set_aspect('equal')
-    ax.set_xlabel('Estimated μ (narrow condition)')
-    ax.set_ylabel('Estimated μ (wide condition)')
+    ax.set_xlabel('Recovered μ (narrow condition)')
+    ax.set_ylabel('Recovered μ (wide condition)')
 
 
 def _bin_point_plot(ax, table, col, ylabel, err_col=None, fmt='{:.2f}'):
