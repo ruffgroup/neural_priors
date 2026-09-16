@@ -20,8 +20,8 @@ mkdir -p "$TMPDIR"
 sleep $(( RANDOM % 20 ))
 
 LOGFILE="/shares/zne.uzh/gdehol/ds-neuralpriors-openneuro-work/logs/np_release_${STEP}_sub-${SUBJECT}_${SLURM_ARRAY_JOB_ID:-$SLURM_JOB_ID}.txt"
-mkdir -p "$(dirname "")"
-exec >"" 2>&1
+mkdir -p "$(dirname "$LOGFILE")"
+exec >"$LOGFILE" 2>&1
 scontrol update jobid="${SLURM_JOB_ID}" name="np_${STEP}" 2>/dev/null || true
 echo "Host: $(hostname)  sub-${SUBJECT}  step ${STEP}  started $(date)"
 
