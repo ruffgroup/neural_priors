@@ -6,6 +6,7 @@
 #SBATCH --job-name=np_release_global
 #SBATCH --account=zne.uzh
 #SBATCH --partition=standard
+#SBATCH --exclude=u24-cva0000-303  # /shares not visible there (2026-09-16): empty listings, EACCES
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=03:00:00
