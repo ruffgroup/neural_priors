@@ -204,7 +204,7 @@ def main():
                                                   .str.replace(r'ses-\d', 'ses-Y', regex=True)
                                                   .str.replace(r'run-\d', 'run-N', regex=True))
             g = unexp.groupby(['pattern', 'kind', 'match']).agg(n=('file', 'size'), example=('context', 'first'))
-            f.write(g.reset_index().to_markdown(index=False) + '\n\n')
+            f.write('```\n' + g.reset_index().to_string(index=False) + '\n```\n\n')
         else:
             f.write('None\n\n')
         f.write('## Expected hits (author names in dataset-level docs)\n\n')

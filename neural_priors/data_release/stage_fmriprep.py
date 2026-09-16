@@ -17,6 +17,8 @@ Usage: python stage_fmriprep.py 01
 """
 import argparse
 import glob
+import gzip
+import io
 import json
 import os.path as op
 import re
@@ -61,6 +63,48 @@ FS_TRIANGLE_SURFACES = ['white', 'pial', 'smoothwm', 'inflated', 'orig', 'sphere
 NEUTRAL_STAMP = 'created by freesurfer'
 
 
+MGH_HEADER_BYTES = 284
+MGH_SCAN_PARAM_BYTES = 20   # TR, flip angle, TE, TI, FoV (float32 each)
+
+
+def copy_mgz_without_tags(src, dst):
+    """Copy an MGZ keeping header, voxel data and scan parameters, dropping the
+    trailing tag block, which holds processing time stamps, user and machine
+    names and full command lines (with file-system paths)."""
+    with gzip.open(src, 'rb') as f:
+        raw = f.read()
+    img = nib.load(src)
+    hdr = img.header
+    nbytes = int(np.prod(hdr.get_data_shape())) * hdr.get_data_dtype().itemsize
+    keep = raw[:MGH_HEADER_BYTES + nbytes + MGH_SCAN_PARAM_BYTES]
+    makedirs_for(dst)
+    with open(dst, 'wb') as out, gzip.GzipFile(filename='', mode='wb', fileobj=out, mtime=0) as g:
+        g.write(keep)
+    new = nib.load(dst)
+    assert np.array_equal(np.asanyarray(new.dataobj), np.asanyarray(img.dataobj)), dst
+    assert np.allclose(new.affine, img.affine), dst
+    assert b'User:' not in gzip.open(dst).read(), dst
+
+
+def copy_nifti_gz_without_extensions(src, dst):
+    """Copy a .nii.gz dropping NIfTI header extensions (ITK/ANTs build info with
+    dates), voxel data byte-identical."""
+    with gzip.open(src, 'rb') as f:
+        raw = f.read()
+    hdr = nib.Nifti1Header.from_fileobj(io.BytesIO(raw[:348]), check=False)
+    vox_offset = int(hdr['vox_offset'])
+    if raw[348:352] == b'\x00\x00\x00\x00':
+        copy_file(src, dst)
+        return
+    hdr['vox_offset'] = 352
+    makedirs_for(dst)
+    with open(dst, 'wb') as out, gzip.GzipFile(filename='', mode='wb', fileobj=out, mtime=0) as g:
+        g.write(hdr.binaryblock + b'\x00\x00\x00\x00' + raw[vox_offset:])
+    a, b = nib.load(src), nib.load(dst)
+    assert np.array_equal(np.asanyarray(a.dataobj), np.asanyarray(b.dataobj)), dst
+    assert np.array_equal(a.affine, b.affine) and not b.header.extensions, dst
+
+
 def fullmatch_any(patterns, name):
     return any(re.fullmatch(p, name) for p in patterns)
 
@@ -94,7 +138,12 @@ def stage_fmriprep(subject):
         if not fullmatch_any(ANAT_ALLOW, name):
             continue
         dst = op.join(OUT, f'sub-{subject}', 'anat', name)
-        rewrite_json(src, dst) if name.endswith('.json') else copy_file(src, dst)
+        if name.endswith('.json'):
+            rewrite_json(src, dst)
+        elif name.endswith('.nii.gz'):
+            copy_nifti_gz_without_extensions(src, dst)
+        else:
+            copy_file(src, dst)
         n += 1
 
     for src in sorted(glob.glob(op.join(src_sub, 'ses-[12]', 'func', '*'))):
@@ -116,7 +165,10 @@ def stage_freesurfer(subject):
     out_sub = op.join(OUT, 'sourcedata', 'freesurfer', f'sub-{subject}')
 
     for rel in FS_MRI_ALLOW:
-        copy_file(op.join(src_sub, 'mri', rel), op.join(out_sub, 'mri', rel))
+        if rel.endswith('.mgz'):
+            copy_mgz_without_tags(op.join(src_sub, 'mri', rel), op.join(out_sub, 'mri', rel))
+        else:
+            copy_file(op.join(src_sub, 'mri', rel), op.join(out_sub, 'mri', rel))
 
     for src in sorted(glob.glob(op.join(src_sub, 'label', '*'))):
         if re.search(r'\.(label|annot|ctab)$', src):
