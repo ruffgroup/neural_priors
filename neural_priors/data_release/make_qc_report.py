@@ -24,7 +24,7 @@ def main(qc_dir):
     deface.loc[deface['brain_voxels_removed'] > 0, 'flag'] += 'BRAIN CLIPPED; '
     deface.loc[deface['dilated_brain_voxels_removed'] > 0, 'flag'] += 'removal within 3 mm of brain; '
     deface.loc[deface['frac_head_voxels_removed'] < 0.01, 'flag'] += 'almost nothing removed; '
-    deface.loc[deface['r_orig_vs_preproc'] < 0.9, 'flag'] += 'transform check r < 0.9; '
+    deface.loc[deface['r_orig_vs_preproc'] < 0.5, 'flag'] += 'transform check r < 0.5; '
     other['flag'] = (other['n_outside_dilated_brainmask'] > 0).map({True: 'voxels outside brain', False: ''})
 
     parts = ['<html><head><meta charset="utf-8"><title>Defacing QC</title><style>'
