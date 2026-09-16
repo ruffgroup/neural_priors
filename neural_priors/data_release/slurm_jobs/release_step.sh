@@ -31,6 +31,6 @@ export PYTHONPATH="$HOME/git/neural_priors"
 export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-2}
 
-"$ENV/bin/python" -u -m "neural_priors.openneuro.${STEP}" "$SUBJECT"
+"$ENV/bin/python" -u -m "neural_priors.data_release.${STEP}" "$SUBJECT"
 echo "Finished $(date)"
 rm -rf "$TMPDIR"

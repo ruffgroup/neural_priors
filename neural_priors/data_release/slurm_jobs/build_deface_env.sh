@@ -12,8 +12,8 @@ export TMPDIR="/scratch/$USER/tmp/${SLURM_JOB_ID:-manual}"
 mkdir -p "$TMPDIR"
 source "$HOME/data/miniforge3/etc/profile.d/conda.sh"
 conda env create -y -p "$HOME/data/conda/envs/np_deface" \
-    -f "$HOME/git/neural_priors/neural_priors/openneuro/environment_deface.yml"
+    -f "$HOME/git/neural_priors/neural_priors/data_release/environment_deface.yml"
 conda activate "$HOME/data/conda/envs/np_deface"
 echo "FSLDIR=$FSLDIR"; which flirt; pydeface --help | head -40
 conda env export -p "$HOME/data/conda/envs/np_deface" \
-    > "$HOME/git/neural_priors/neural_priors/openneuro/environment_deface.lock.yml"
+    > "$HOME/git/neural_priors/neural_priors/data_release/environment_deface.lock.yml"

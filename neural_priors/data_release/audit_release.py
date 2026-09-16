@@ -25,10 +25,9 @@ import re
 import sys
 
 import nibabel as nib
-import numpy as np
 import pandas as pd
 
-from neural_priors.openneuro.release import NIFTI_TEXT_FIELDS, TARGET, TASK, WORK, get_subjects
+from neural_priors.data_release.release import NIFTI_TEXT_FIELDS, TARGET, TASK, WORK, get_subjects
 
 SUBJ = r'sub-(\d\d)'
 SES = r'ses-[12]'

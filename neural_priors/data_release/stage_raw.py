@@ -20,7 +20,8 @@ import re
 import numpy as np
 import pandas as pd
 
-from neural_priors.openneuro.release import (SOURCE, TARGET, WORK, TASK, TASK_OLD,
+from neural_priors.data_release.export_behavior_figshare import numeric_responses
+from neural_priors.data_release.release import (SOURCE, TARGET, WORK, TASK, TASK_OLD,
                                              copy_nifti_clean_header, get_subjects,
                                              makedirs_for, verify_same_image)
 
@@ -75,7 +76,7 @@ def stage_t1w(subject, session):
 def build_events(subject, session, run):
     fn = op.join(SOURCE, 'sourcedata', 'behavior', f'sub-{subject}', f'ses-{session}',
                  f'sub-{subject}_ses-{session}_task-estimation_task_run-{run}_events.tsv')
-    d = pd.read_csv(fn, sep='\t')
+    d = numeric_responses(pd.read_csv(fn, sep='\t'))
     # Onsets relative to the trigger_2 scanner pulse (as in prepare/make_events_files.py)
     t0 = d.loc[d['event_type'] == 'trigger_2', 'onset'].iloc[0]
     d['onset'] = d['onset'] - t0
@@ -98,7 +99,7 @@ def build_events(subject, session, run):
         # 'response_time' column is relative to the last logged event, often a
         # scanner pulse, and is not used.)
         resp_end = fb.loc[t, 'onset'] if t in fb.index else np.nan
-        rt = resp_end - resp.loc[t, 'onset'] if np.isfinite(response) else np.nan
+        rt = resp_end - resp.loc[t, 'onset'] if pd.notna(response) else np.nan
         common = dict(trial_nr=trial_nr, range=rng, n=int(stim.loc[t, 'n']), response=response,
                       response_time=rt, start_marker_position=stim.loc[t, 'start_marker_position'])
         rows.append(dict(onset=stim.loc[t, 'onset'], duration=stim.loc[t, 'duration'],

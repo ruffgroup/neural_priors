@@ -14,7 +14,7 @@ import os.path as op
 
 import pandas as pd
 
-from neural_priors.openneuro.release import (SOURCE, TARGET, WORK, TASK, TASK_NAME, TASK_OLD,
+from neural_priors.data_release.release import (SOURCE, TARGET, WORK, TASK, TASK_NAME, TASK_OLD,
                                              copy_file, get_subjects)
 
 TITLE = 'Distributed range adaptation in human parietal encoding of numbers'

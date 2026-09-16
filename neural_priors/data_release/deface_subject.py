@@ -27,7 +27,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 
-from neural_priors.openneuro.release import (TARGET, WORK, copy_nifti_clean_header, get_subjects,
+from neural_priors.data_release.release import (TARGET, WORK, copy_nifti_clean_header, get_subjects,
                                              makedirs_for, verify_same_image)
 
 TEMPLATE = str(files('pydeface').joinpath('data/mean_reg2mean.nii.gz'))

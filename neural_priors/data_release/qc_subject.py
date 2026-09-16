@@ -30,7 +30,7 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage
 
-from neural_priors.openneuro.release import SOURCE, TARGET, WORK, get_subjects, makedirs_for
+from neural_priors.data_release.release import SOURCE, TARGET, WORK, get_subjects, makedirs_for
 
 FMRIPREP_SRC = op.join(SOURCE, 'derivatives', 'fmriprep')
 FMRIPREP_OUT = op.join(TARGET, 'derivatives', 'fmriprep')
