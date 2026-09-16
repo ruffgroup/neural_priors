@@ -170,9 +170,16 @@ def main():
     # 4. high-resolution images must be QC-approved
     qc_deface = pd.concat([pd.read_csv(f, sep='\t') for f in glob.glob(op.join(WORK, 'qc', 'sub-*_qc_deface.tsv'))])
     qc_other = pd.concat([pd.read_csv(f, sep='\t') for f in glob.glob(op.join(WORK, 'qc', 'sub-*_qc_other_volumes.tsv'))])
-    sibling = qc_deface.get('method', pd.Series('', index=qc_deface.index)).fillna('').str.startswith('sibling-mask')
-    approved_defaced = set(qc_deface.loc[(qc_deface['brain_voxels_removed'] == 0) &
-                                         ((qc_deface['frac_head_voxels_removed'] > 0.01) | sibling), 'file'])
+    ok = (qc_deface['brain_voxels_removed'] == 0) & (qc_deface['frac_head_voxels_removed'] > 0.01)
+    approved_defaced = set(qc_deface.loc[ok, 'file'])
+    # An image defaced with the mask of a sibling on the identical grid is approved when
+    # that sibling is (its own transform-based metrics are meaningless: the image is noise).
+    method = qc_deface.get('method', pd.Series('', index=qc_deface.index)).fillna('')
+    for _, row in qc_deface[method.str.startswith('sibling-mask')].iterrows():
+        sib = re.search(r'sibling-mask \((.+)\)', row['method']).group(1)
+        sib_file = op.join(op.dirname(row['file']), sib)
+        if sib_file in approved_defaced:
+            approved_defaced.add(row['file'])
     approved_other = set(qc_other.loc[qc_other['n_outside_dilated_brainmask'] <= 100, 'file'])
     for rel in highres:
         if rel not in approved_defaced and rel not in approved_other:
