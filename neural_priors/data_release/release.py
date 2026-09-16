@@ -17,9 +17,11 @@ import nibabel as nib
 import numpy as np
 import yaml
 
-SOURCE = '/shares/zne.uzh/gdehol/ds-neuralpriors'
-TARGET = '/shares/zne.uzh/gdehol/ds-neuralpriors-openneuro'
-WORK = '/shares/zne.uzh/gdehol/ds-neuralpriors-openneuro-work'
+# Defaults = the cluster share; override with environment variables to run elsewhere
+# (e.g. a ScienceCloud VM holding a copy of the dataset).
+SOURCE = os.environ.get('NP_RELEASE_SOURCE', '/shares/zne.uzh/gdehol/ds-neuralpriors')
+TARGET = os.environ.get('NP_RELEASE_TARGET', '/shares/zne.uzh/gdehol/ds-neuralpriors-openneuro')
+WORK = os.environ.get('NP_RELEASE_WORK', '/shares/zne.uzh/gdehol/ds-neuralpriors-openneuro-work')
 
 # BIDS task label: 'task-task' in the working dataset, renamed for the release.
 TASK_OLD = 'task'
