@@ -105,6 +105,34 @@ def copy_nifti_gz_without_extensions(src, dst):
     assert np.array_equal(a.affine, b.affine) and not b.header.extensions, dst
 
 
+def copy_gifti_clean_meta(src, dst):
+    """Copy a GIfTI dropping UserName/Date metadata and shortening container paths
+    in data-array names; data arrays verified identical."""
+    img = nib.load(src)
+    for key in ['UserName', 'Date']:
+        img.meta.pop(key, None)
+    for da in img.darrays:
+        if 'Name' in da.meta and '/sourcedata/' in da.meta['Name']:
+            da.meta['Name'] = 'sourcedata/' + da.meta['Name'].split('/sourcedata/', 1)[1]
+    makedirs_for(dst)
+    img.to_filename(dst)
+    new = nib.load(dst)
+    assert len(new.darrays) == len(img.darrays)
+    for a_, b_ in zip(nib.load(src).darrays, new.darrays):
+        assert np.array_equal(a_.data, b_.data), dst
+    assert 'UserName' not in new.meta and 'Date' not in new.meta, dst
+
+
+def copy_text_neutral_stamp(src, dst):
+    """FreeSurfer text transforms: replace '# created by <user> on <date>'."""
+    with open(src) as f:
+        text = f.read()
+    text = re.sub(r'^# created by .*$', '# created by freesurfer', text, flags=re.M)
+    makedirs_for(dst)
+    with open(dst, 'w') as f:
+        f.write(text)
+
+
 def fullmatch_any(patterns, name):
     return any(re.fullmatch(p, name) for p in patterns)
 
@@ -142,6 +170,8 @@ def stage_fmriprep(subject):
             rewrite_json(src, dst)
         elif name.endswith('.nii.gz'):
             copy_nifti_gz_without_extensions(src, dst)
+        elif name.endswith('.gii'):
+            copy_gifti_clean_meta(src, dst)
         else:
             copy_file(src, dst)
         n += 1
@@ -168,7 +198,7 @@ def stage_freesurfer(subject):
         if rel.endswith('.mgz'):
             copy_mgz_without_tags(op.join(src_sub, 'mri', rel), op.join(out_sub, 'mri', rel))
         else:
-            copy_file(op.join(src_sub, 'mri', rel), op.join(out_sub, 'mri', rel))
+            copy_text_neutral_stamp(op.join(src_sub, 'mri', rel), op.join(out_sub, 'mri', rel))
 
     for src in sorted(glob.glob(op.join(src_sub, 'label', '*'))):
         if re.search(r'\.(label|annot|ctab)$', src):

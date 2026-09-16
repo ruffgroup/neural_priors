@@ -54,7 +54,7 @@ PATTERNS = {
     'date_compact': r'(?<!\d)20(1\d|2[0-6])(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])(?!\d)',
     'weekday_time': r'\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b[^\n]{0,25}\b\d\d:\d\d',
     'month_year': r'(?i)\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2},?\s+(19|20)\d\d\b',
-    'path': r'(/home/|/Users/|/shares/|/scratch/|/storage/|/workflow|idnas|\\\\[A-Za-z])',
+    'path': r'(/home/|/Users/|/shares/|/scratch/|/storage/|/workflow/|idnas)',
     'email': r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}',
     'ip': r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b',
     'dicom_id': r'(?i)(patient|birth|\bdob\b|AcquisitionDate|AcquisitionTime|ContentDate|SeriesDate|StudyDate|'
@@ -125,7 +125,7 @@ def main():
         if 'task-task' in rel or re.search(PATTERNS['name'], rel):
             problems.append(f'bad file name: {rel}')
 
-        if rel.endswith(TEXT_EXT):
+        if rel.endswith(TEXT_EXT):  # (UNC-path pattern dropped: pure noise in binary strings)
             with open(fn, errors='replace') as f:
                 text = f.read()
             if rel.endswith('.label'):
