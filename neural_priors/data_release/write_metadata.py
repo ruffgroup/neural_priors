@@ -8,9 +8,12 @@ desc-aseg_dseg.tsv, desc-aparcaseg_dseg.tsv, CITATION.md, CITATION.bib}.
 participants.tsv is built from WORK/participants_source.tsv (the lab's table:
 numeric participant_id, age, Sex), restricted to the released subjects.
 """
+import collections
 import glob
 import json
 import os.path as op
+
+import nibabel as nib
 
 import pandas as pd
 
@@ -54,6 +57,27 @@ def check_bold_sidecars():
     return common
 
 
+def write_run_repetition_times():
+    """RepetitionTime per run, from the NIfTI header (the scanner-reported value).
+
+    The working dataset's sidecars all say 2.298 s, but for some sessions the scanner
+    reported 2.286 s (or 2.292 s) in the image header; bids-validator requires the two
+    to agree. SliceTiming stays at the nominal values used for preprocessing (all < TR).
+    """
+    trs = collections.Counter()
+    for fn in sorted(glob.glob(op.join(TARGET, 'sub-*', 'ses-*', 'func', f'*_task-{TASK}_run-*_bold.nii.gz'))):
+        hdr = nib.load(fn).header
+        assert hdr.get_xyzt_units()[1] == 'sec', fn
+        tr = round(float(hdr.get_zooms()[3]), 4)
+        side = fn.replace('.nii.gz', '.json')
+        with open(side) as f:
+            meta = json.load(f)
+        meta['RepetitionTime'] = tr
+        json_dump(meta, side)
+        trs[tr] += 1
+    print('RepetitionTime per run:', dict(trs))
+
+
 def write_raw():
     json_dump({
         'Name': TITLE,
@@ -71,11 +95,12 @@ def write_raw():
         'TaskDescription': TASK_DESCRIPTION,
         'Manufacturer': 'Philips',
         'MagneticFieldStrength': common['MagneticFieldStrength'],
-        'RepetitionTime': common['RepetitionTime'],
         'SliceTiming': common['SliceTiming'],
         'ParallelReductionFactorInPlane': common['ParallelReductionFactorInPlane'],
         'TotalReadoutTime': common['TotalReadoutTime'],
     }, op.join(TARGET, f'task-{TASK}_bold.json'))
+
+    write_run_repetition_times()
 
     json_dump({'Manufacturer': 'Philips', 'MagneticFieldStrength': 3},
               op.join(TARGET, 'T1w.json'))
@@ -143,7 +168,7 @@ def write_derivatives():
 README = """{title}
 {underline}
 
-Raw BIDS data of {n} healthy adult participants who estimated the number of dots in visual displays while undergoing 3T fMRI (Philips; EPI, 2.5 x 2.5 x 3 mm voxels, TR = 2.3 s), in two contexts that differed in the range of possible numerosities (narrow: 10-25, wide: 10-40).
+Raw BIDS data of {n} healthy adult participants who estimated the number of dots in visual displays while undergoing 3T fMRI (Philips; EPI, 2.5 x 2.5 x 3 mm voxels, TR = 2.29-2.30 s; the exact scanner-reported TR of each run is in its JSON sidecar), in two contexts that differed in the range of possible numerosities (narrow: 10-25, wide: 10-40).
 
 Paper (preprint): {preprint}
 Analysis code: {code}
