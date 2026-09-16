@@ -1,0 +1,20 @@
+# Small env for defacing + QC of the OpenNeuro release (cluster).
+# FSL flirt comes from the official FSL conda channel; pydeface drives it.
+name: np_deface
+channels:
+  - https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/
+  - conda-forge
+dependencies:
+  - python=3.11
+  - fsl-flirt
+  - fsl-avwutils
+  - nibabel
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - pyyaml
+  - pip
+  - pip:
+      - pydeface
+      - nitransforms
