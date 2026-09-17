@@ -78,6 +78,42 @@ def write_run_repetition_times():
     print('RepetitionTime per run:', dict(trs))
 
 
+# Acquisition parameters as reported in the paper's Methods ("MRI data acquisition").
+SCANNER = {
+    'Manufacturer': 'Philips',
+    'ManufacturersModelName': 'Achieva',
+    'MagneticFieldStrength': 3,
+    'ReceiveCoilName': '32-channel head coil',
+    'InstitutionName': 'University of Zurich',
+    'InstitutionalDepartmentName': 'Laboratory for Social and Neural Systems Research (SNS-Lab), '
+                                   'Zurich Center for Neuroeconomics',
+}
+EPI_SEQUENCE = {
+    'PulseSequenceType': 'Gradient-echo EPI',
+    'ScanningSequence': 'GR',
+    'SequenceVariant': 'NONE',
+    'MRAcquisitionType': '2D',
+    'EchoTime': 0.030,
+    'FlipAngle': 90,
+    'SliceThickness': 2.5,
+    'SpacingBetweenSlices': 3.0,
+}
+T1W_SEQUENCE = {
+    'PulseSequenceType': 'MPRAGE',
+    'ScanningSequence': 'GR\\IR',
+    'SequenceVariant': 'MP',
+    'MRAcquisitionType': '3D',
+    'EchoTime': 0.0039,
+    'RepetitionTimeExcitation': 0.0083,
+    'RepetitionTimePreparation': 2.8,
+    'InversionTime': 1.0986,
+    'FlipAngle': 8,
+    'ParallelReductionFactorInPlane': 2,
+}
+INSTRUCTIONS = ('Estimate the number of dots and report it with the slider. '
+                'Your accuracy will influence your monetary bonus.')
+
+
 def write_raw():
     json_dump({
         'Name': TITLE,
@@ -90,11 +126,13 @@ def write_raw():
     }, op.join(TARGET, 'dataset_description.json'))
 
     common = check_bold_sidecars()
+    assert common['MagneticFieldStrength'] == SCANNER['MagneticFieldStrength']
     json_dump({
         'TaskName': TASK_NAME,
         'TaskDescription': TASK_DESCRIPTION,
-        'Manufacturer': 'Philips',
-        'MagneticFieldStrength': common['MagneticFieldStrength'],
+        'Instructions': INSTRUCTIONS,
+        **SCANNER,
+        **EPI_SEQUENCE,
         'SliceTiming': common['SliceTiming'],
         'ParallelReductionFactorInPlane': common['ParallelReductionFactorInPlane'],
         'TotalReadoutTime': common['TotalReadoutTime'],
@@ -102,8 +140,9 @@ def write_raw():
 
     write_run_repetition_times()
 
-    json_dump({'Manufacturer': 'Philips', 'MagneticFieldStrength': 3},
-              op.join(TARGET, 'T1w.json'))
+    json_dump({**SCANNER, **T1W_SEQUENCE}, op.join(TARGET, 'T1w.json'))
+    # Synthesised PEPOLAR fieldmaps are volumes of the BOLD runs themselves.
+    json_dump({**SCANNER, **EPI_SEQUENCE}, op.join(TARGET, 'epi.json'))
 
     json_dump({
         'trial_type': {'Description': 'Event type. Onsets are relative to the first recorded volume '
@@ -112,6 +151,9 @@ def write_raw():
                                       'the 3-s time-out (response).',
                        'Levels': {'stimulus': 'Dot-cloud presentation.',
                                   'response': 'Response slider on screen.'}},
+        'StimulusPresentation': {'SoftwareName': 'PsychoPy (with exptools2)',
+                                 'SoftwareRRID': 'SCR_006571',
+                                 'OperatingSystem': 'Windows'},
         'trial_nr': {'Description': 'Trial number within the session (1-240); run r holds trials '
                                     '30*(r-1)+1 ... 30*r.'},
         'range': {'Description': 'Numerosity range of the run (constant within a run).',
