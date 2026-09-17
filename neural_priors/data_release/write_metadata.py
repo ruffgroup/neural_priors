@@ -192,7 +192,7 @@ def write_raw():
                        'Levels': {'stimulus': 'Dot-cloud presentation.',
                                   'response': 'Response slider on screen.'}},
         'StimulusPresentation': {'SoftwareName': 'PsychoPy (with exptools2)',
-                                 'SoftwareRRID': 'SCR_006571',
+                                 'SoftwareRRID': 'RRID:SCR_006571',
                                  'OperatingSystem': 'Windows'},
         'trial_nr': {'Description': 'Trial number within the session (1-240); run r holds trials '
                                     '30*(r-1)+1 ... 30*r.'},
