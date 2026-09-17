@@ -12,6 +12,7 @@ import collections
 import glob
 import json
 import os.path as op
+import re
 
 import nibabel as nib
 
@@ -103,15 +104,31 @@ T1W_SEQUENCE = {
     'ScanningSequence': 'GR\\IR',
     'SequenceVariant': 'MP',
     'MRAcquisitionType': '3D',
-    'EchoTime': 0.0039,
-    'RepetitionTimeExcitation': 0.0083,
     'RepetitionTimePreparation': 2.8,
     'InversionTime': 1.0986,
     'FlipAngle': 8,
     'ParallelReductionFactorInPlane': 2,
 }
+# EchoTime / RepetitionTimeExcitation of the T1w differ between sessions (PAR headers,
+# see acquisition_parameters.tsv): written per image by write_t1w_sidecars().
+PAR_TABLE = op.join(op.dirname(__file__), 'acquisition_parameters.tsv')
 INSTRUCTIONS = ('Estimate the number of dots and report it with the slider. '
                 'Your accuracy will influence your monetary bonus.')
+
+
+def write_t1w_sidecars():
+    """Per-image T1w timing from the PAR headers (constant within a session)."""
+    par = pd.read_csv(PAR_TABLE, sep='\t', dtype={'subject': str})
+    t1 = par[par['scan'] == 'T1w'].groupby(['subject', 'session'])[['tr_ms', 'te_ms']].agg(set)
+    n = 0
+    for fn in sorted(glob.glob(op.join(TARGET, 'sub-*', 'ses-*', 'anat', '*_T1w.nii.gz'))):
+        sub, ses = re.search(r'sub-(\d\d)_ses-(\d)_', op.basename(fn)).groups()
+        trs, tes = t1.loc[(sub, int(ses))]
+        assert len(trs) == 1 and len(tes) == 1, (fn, trs, tes)
+        json_dump({'RepetitionTimeExcitation': round(trs.pop() / 1000, 5),
+                   'EchoTime': round(tes.pop() / 1000, 5)}, fn.replace('.nii.gz', '.json'))
+        n += 1
+    print(f'T1w sidecars: {n}')
 
 
 def write_raw():
@@ -134,13 +151,16 @@ def write_raw():
         **SCANNER,
         **EPI_SEQUENCE,
         'SliceTiming': common['SliceTiming'],
-        'ParallelReductionFactorInPlane': common['ParallelReductionFactorInPlane'],
+        # SENSE 1.5 per the paper's Methods and the 2021 protocol sheet; the original
+        # conversion template said 2 (not recorded in the PAR headers).
+        'ParallelReductionFactorInPlane': 1.5,
         'TotalReadoutTime': common['TotalReadoutTime'],
     }, op.join(TARGET, f'task-{TASK}_bold.json'))
 
     write_run_repetition_times()
 
     json_dump({**SCANNER, **T1W_SEQUENCE}, op.join(TARGET, 'T1w.json'))
+    write_t1w_sidecars()
     # Synthesised PEPOLAR fieldmaps are volumes of the BOLD runs themselves.
     json_dump({**SCANNER, **EPI_SEQUENCE}, op.join(TARGET, 'epi.json'))
 
@@ -225,7 +245,7 @@ The released participants are exactly the analysed sample (sub-01 ... sub-41 wit
 
 Data
 ----
-- anat: T1-weighted images, two images per session (two reconstructions of the same acquisition; sub-19 and sub-31 have an extra repeat). All T1-weighted images were defaced with the pydeface method (face mask registered with FSL FLIRT; voxels under the mask set to zero) and every image was visually checked.
+- anat: T1-weighted images, two separate MPRAGE acquisitions per session (sub-19 and sub-31 have an extra repeat); per-image timing is in each sidecar. All T1-weighted images were defaced with the pydeface method (face mask registered with FSL FLIRT; voxels under the mask set to zero) and every image was visually checked.
 - func: BOLD runs.
 - fmap: The acquisition had no dedicated fieldmaps. Runs alternate the phase-encoding direction; each `_epi` image consists of 5 volumes taken from a neighbouring run with the opposite phase-encoding direction (see IntendedFor), for PEPOLAR susceptibility-distortion correction.
 - derivatives/fmriprep: fMRIPrep 23.2.1 outputs used by the analyses (see its README).
