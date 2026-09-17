@@ -3,7 +3,7 @@ for figshare, plus a codebook README.
 
 Rows = trials of three tasks, per participant x session x block:
 - examples:   15 labelled example displays before each block (self-paced viewing)
-- practice:   30 estimation trials with feedback before each block (no fMRI)
+- practice:   30 estimation trials with feedback before each block (during the T1w scan; no fMRI)
 - estimation: 4 runs x 30 trials per block, in the scanner (the analysed task)
 
 Only the released participants (the paper's sample) are exported; subject labels
@@ -134,7 +134,7 @@ One table, `neural_priors_behavior.tsv` (tab-separated, `n/a` = missing), one ro
 Participants estimated the number of dots in briefly shown dot clouds. Each participant did two sessions; each session had two blocks, one in which numerosities were drawn uniformly from 10-25 (`narrow`) and one from 10-40 (`wide`). Each block consisted of, in this order:
 
 1. `examples`: 15 dot clouds shown together with their numerosity (the first two are the range limits). No response.
-2. `practice`: 30 estimation trials with feedback (the true number was shown after the response), outside the fMRI data. No response deadline.
+2. `practice`: 30 estimation trials with feedback (the true number was shown after the response). Done in the scanner during the T1-weighted anatomical scan, so there are no fMRI data for these trials. No response deadline.
 3. `estimation`: 4 fMRI runs of 30 trials each (runs 1-4 in block 1, 5-8 in block 2), without feedback. Dot cloud 0.6 s, delay 4-6 s, response slider for at most 3 s. These are the trials analysed in the paper.
 
 Responses were given by moving a marker along a slider and clicking.

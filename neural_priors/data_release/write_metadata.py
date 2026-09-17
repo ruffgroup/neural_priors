@@ -91,6 +91,8 @@ SCANNER = {
 }
 EPI_SEQUENCE = {
     'PulseSequenceType': 'Gradient-echo EPI',
+    'SequenceName': 'FEEPI',   # Philips technique name (PAR header)
+    'MatrixCoilMode': 'SENSE',
     'ScanningSequence': 'GR',
     'SequenceVariant': 'NONE',
     'MRAcquisitionType': '2D',
@@ -101,6 +103,8 @@ EPI_SEQUENCE = {
 }
 T1W_SEQUENCE = {
     'PulseSequenceType': 'MPRAGE',
+    'SequenceName': 'T1TFE',   # Philips technique name (PAR header)
+    'MatrixCoilMode': 'SENSE',
     'ScanningSequence': 'GR\\IR',
     'SequenceVariant': 'MP',
     'MRAcquisitionType': '3D',
