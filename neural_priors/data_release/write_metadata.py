@@ -125,8 +125,8 @@ def write_t1w_sidecars():
         sub, ses = re.search(r'sub-(\d\d)_ses-(\d)_', op.basename(fn)).groups()
         trs, tes = t1.loc[(sub, int(ses))]
         assert len(trs) == 1 and len(tes) == 1, (fn, trs, tes)
-        json_dump({'RepetitionTimeExcitation': round(trs.pop() / 1000, 5),
-                   'EchoTime': round(tes.pop() / 1000, 5)}, fn.replace('.nii.gz', '.json'))
+        json_dump({'RepetitionTimeExcitation': round(next(iter(trs)) / 1000, 5),
+                   'EchoTime': round(next(iter(tes)) / 1000, 5)}, fn.replace('.nii.gz', '.json'))
         n += 1
     print(f'T1w sidecars: {n}')
 
@@ -148,6 +148,7 @@ def write_raw():
         'TaskName': TASK_NAME,
         'TaskDescription': TASK_DESCRIPTION,
         'Instructions': INSTRUCTIONS,
+        'CogAtlasID': 'https://www.cognitiveatlas.org/task/id/trm_4f2457454e458/',
         **SCANNER,
         **EPI_SEQUENCE,
         'SliceTiming': common['SliceTiming'],
