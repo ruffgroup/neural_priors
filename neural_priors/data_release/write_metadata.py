@@ -117,18 +117,37 @@ INSTRUCTIONS = ('Estimate the number of dots and report it with the slider. '
 
 
 def write_t1w_sidecars():
-    """Per-image T1w timing from the PAR headers (constant within a session)."""
+    """Per-image T1w timing from the PAR headers (constant within a session).
+
+    Two T1w protocol variants occur: TR/TE 8.28/3.88 ms and 8.05/3.68 ms. In every
+    session with PAR headers the 8.05-ms variant coincides exactly with a BOLD TR
+    below 2295 ms (the sessions with a different scanner timing). The raw exports of
+    sub-02 and of sub-03/sub-04 session 1 are not in sourcedata/mri; their variant is
+    inferred from that rule using the BOLD TRs in the NIfTI headers.
+    """
     par = pd.read_csv(PAR_TABLE, sep='\t', dtype={'subject': str})
     t1 = par[par['scan'] == 'T1w'].groupby(['subject', 'session'])[['tr_ms', 'te_ms']].agg(set)
-    n = 0
+    bold_tr = par[par['scan'] == 'bold'].groupby(['subject', 'session'])['tr_ms'].min()
+    variant = {True: (8.05, 3.68), False: (8.28, 3.88)}
+    for key, (trs, tes) in t1.iterrows():
+        assert (next(iter(trs)), next(iter(tes))) == variant[bold_tr[key] < 2295], key
+
+    n, inferred = 0, set()
     for fn in sorted(glob.glob(op.join(TARGET, 'sub-*', 'ses-*', 'anat', '*_T1w.nii.gz'))):
         sub, ses = re.search(r'sub-(\d\d)_ses-(\d)_', op.basename(fn)).groups()
-        trs, tes = t1.loc[(sub, int(ses))]
-        assert len(trs) == 1 and len(tes) == 1, (fn, trs, tes)
-        json_dump({'RepetitionTimeExcitation': round(next(iter(trs)) / 1000, 5),
-                   'EchoTime': round(next(iter(tes)) / 1000, 5)}, fn.replace('.nii.gz', '.json'))
+        if (sub, int(ses)) in t1.index:
+            trs, tes = t1.loc[(sub, int(ses))]
+            assert len(trs) == 1 and len(tes) == 1, (fn, trs, tes)
+            tr, te = next(iter(trs)), next(iter(tes))
+        else:
+            runs = glob.glob(op.join(TARGET, f'sub-{sub}', f'ses-{ses}', 'func', '*_bold.nii.gz'))
+            min_tr = min(float(nib.load(r).header.get_zooms()[3]) for r in runs) * 1000
+            tr, te = variant[min_tr < 2295]
+            inferred.add((sub, ses))
+        json_dump({'RepetitionTimeExcitation': round(tr / 1000, 5), 'EchoTime': round(te / 1000, 5)},
+                  fn.replace('.nii.gz', '.json'))
         n += 1
-    print(f'T1w sidecars: {n}')
+    print(f'T1w sidecars: {n} (inferred from BOLD TR for sessions {sorted(inferred)})')
 
 
 def write_raw():
